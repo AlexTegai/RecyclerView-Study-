@@ -3,6 +3,7 @@ package com.example.recyclerview
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
+import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.recyclerview.databinding.ActivityMainBinding
 import com.example.recyclerview.model.User
@@ -25,6 +26,8 @@ class MainActivity : AppCompatActivity() {
         adapter = UsersAdapter(object : UserActionListener {
             override fun onUserMove(user: User, moveBy: Int) = userService.moveUser(user, moveBy)
 
+            override fun onUserFire(user: User) = userService.fireUser(user)
+
             override fun onUserDelete(user: User) = userService.deleteUser(user)
 
             override fun onUserDetails(user: User) {
@@ -39,6 +42,10 @@ class MainActivity : AppCompatActivity() {
         val layoutManager = LinearLayoutManager(this)
         binding.recyclerView.layoutManager = layoutManager
         binding.recyclerView.adapter = adapter
+
+        // Убираем анимацию ячейки, при удалении компании
+        val itemAnimator = binding.recyclerView.itemAnimator
+        if (itemAnimator is DefaultItemAnimator) itemAnimator.supportsChangeAnimations = false
 
         userService.addListener(userListener)
     }

@@ -2,6 +2,7 @@ package com.example.recyclerview.model
 
 import com.github.javafaker.Faker
 import java.util.*
+import kotlin.collections.ArrayList
 
 typealias UserListener = (users: List<User>) -> Unit
 
@@ -23,21 +24,30 @@ class UserService {
         }.toMutableList()
     }
 
-    fun getUsers(): List<User> {
-        return users
-    }
-
-    fun deleteUser(user: User) {
-        val indexToDelete = users.indexOfFirst { it.id == user.id }
-        if (indexToDelete != -1) users.removeAt(indexToDelete)
+    fun fireUser(user: User) {
+        val index = findIndexById(user.id)
+        if (index == -1) return
+        val updatedUser = users[index].copy(company = "")
+        users = ArrayList(users)
+        users[index] = updatedUser
         notifyChanges()
     }
 
+    fun deleteUser(user: User) {
+        val indexToDelete = findIndexById(user.id)
+        if (indexToDelete != -1) {
+            users = ArrayList(users)
+            users.removeAt(indexToDelete)
+            notifyChanges()
+        }
+    }
+
     fun moveUser(user: User, moveBy: Int) {
-        val oldIndex = users.indexOfFirst { it.id == user.id }
+        val oldIndex = findIndexById(user.id)
         if (oldIndex == -1) return
         val newIndex = oldIndex + moveBy
         if (newIndex < 0 || newIndex >= users.size) return
+        users = ArrayList(users)
         Collections.swap(users, oldIndex, newIndex)
         notifyChanges()
     }
@@ -47,15 +57,14 @@ class UserService {
         listener.invoke(users)
     }
 
-    fun removeListener(listener: UserListener) {
-        listeners.remove(listener)
-    }
+    fun removeListener(listener: UserListener) = listeners.remove(listener)
 
-    private fun notifyChanges() {
-        listeners.forEach { it.invoke(users) }
-    }
+    private fun notifyChanges() = listeners.forEach { it.invoke(users) }
+
+    private fun findIndexById(userId: Long): Int = users.indexOfFirst { it.id == userId }
 
     companion object {
+
         private val IMAGES = mutableListOf(
             "https://images.unsplash.com/photo-1600267185393-e158a98703de?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&ixid=MnwxfDB8MXxyYW5kb218fHx8fHx8fHwxNjI0MDE0NjQ0&ixlib=rb-1.2.1&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=800",
             "https://images.unsplash.com/photo-1579710039144-85d6bdffddc9?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&ixid=MnwxfDB8MXxyYW5kb218fHx8fHx8fHwxNjI0MDE0Njk1&ixlib=rb-1.2.1&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=800",
@@ -68,5 +77,6 @@ class UserService {
             "https://images.unsplash.com/photo-1567186937675-a5131c8a89ea?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&ixid=MnwxfDB8MXxyYW5kb218fHx8fHx8fHwxNjI0MDE0ODYx&ixlib=rb-1.2.1&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=800",
             "https://images.unsplash.com/photo-1546456073-92b9f0a8d413?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&ixid=MnwxfDB8MXxyYW5kb218fHx8fHx8fHwxNjI0MDE0ODY1&ixlib=rb-1.2.1&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=800"
         )
+
     }
 }
