@@ -4,12 +4,12 @@ import com.github.javafaker.Faker
 import java.util.*
 import kotlin.collections.ArrayList
 
-typealias UserListener = (users: List<User>) -> Unit
+typealias UsersListener = (users: List<User>) -> Unit
 
-class UserService {
+class UsersService {
 
     private var users = mutableListOf<User>()
-    private val listeners = mutableSetOf<UserListener>()
+    private val listeners = mutableSetOf<UsersListener>()
 
     init {
         val faker = Faker.instance()
@@ -52,12 +52,12 @@ class UserService {
         notifyChanges()
     }
 
-    fun addListener(listener: UserListener) {
+    fun addListener(listener: UsersListener) {
         listeners.add(listener)
         listener.invoke(users)
     }
 
-    fun removeListener(listener: UserListener) = listeners.remove(listener)
+    fun removeListener(listener: UsersListener) = listeners.remove(listener)
 
     private fun notifyChanges() = listeners.forEach { it.invoke(users) }
 
