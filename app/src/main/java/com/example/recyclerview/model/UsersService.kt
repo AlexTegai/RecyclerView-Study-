@@ -1,70 +1,82 @@
 package com.example.recyclerview.model
 
+import com.example.recyclerview.UserNotFoundException
+import com.example.recyclerview.tasks.SimpleTask
+import com.example.recyclerview.tasks.Task
 import com.github.javafaker.Faker
 import java.util.*
-import kotlin.collections.ArrayList
+import java.util.concurrent.Callable
 
-typealias UserListener = (users: List<User>) -> Unit
+typealias UsersListener = (users: List<User>) -> Unit
 
-class UserService {
+class UsersService {
 
     private var users = mutableListOf<User>()
-    private val listeners = mutableSetOf<UserListener>()
+    private var loaded = false
 
-    init {
+    private val listeners = mutableSetOf<UsersListener>()
+
+    fun loadUsers(): Task<Unit> = SimpleTask {
+        Thread.sleep(2000)
         val faker = Faker.instance()
         IMAGES.shuffle()
         users = (1..100).map {
             User(
                 id = it.toLong(),
-                photo = IMAGES[it % IMAGES.size],
                 name = faker.name().name(),
-                company = faker.company().name()
+                company = faker.company().name(),
+                photo = IMAGES[it % IMAGES.size]
             )
         }.toMutableList()
-    }
-
-    fun fireUser(user: User) {
-        val index = findIndexById(user.id)
-        if (index == -1) return
-        val updatedUser = users[index].copy(company = "")
-        users = ArrayList(users)
-        users[index] = updatedUser
+        loaded = true
         notifyChanges()
     }
 
-    fun deleteUser(user: User) {
-        val indexToDelete = findIndexById(user.id)
+    fun getById(id: Long): Task<UserDetails> = SimpleTask(Callable {
+        Thread.sleep(2000)
+        val user = users.firstOrNull { it.id == id } ?: throw UserNotFoundException()
+        return@Callable UserDetails(
+            user = user,
+            details = Faker.instance().lorem().paragraphs(3).joinToString("\n\n")
+        )
+    })
+
+    fun deleteUser(user: User): Task<Unit> = SimpleTask {
+        Thread.sleep(2000)
+        val indexToDelete = users.indexOfFirst { it.id == user.id }
         if (indexToDelete != -1) {
-            users = ArrayList(users)
             users.removeAt(indexToDelete)
             notifyChanges()
         }
     }
 
-    fun moveUser(user: User, moveBy: Int) {
-        val oldIndex = findIndexById(user.id)
-        if (oldIndex == -1) return
+    fun moveUser(user: User, moveBy: Int): Task<Unit> = SimpleTask(Callable {
+        Thread.sleep(2000)
+        val oldIndex = users.indexOfFirst { it.id == user.id }
+        if (oldIndex == -1) return@Callable
         val newIndex = oldIndex + moveBy
-        if (newIndex < 0 || newIndex >= users.size) return
-        users = ArrayList(users)
+        if (newIndex < 0 || newIndex >= users.size) return@Callable
         Collections.swap(users, oldIndex, newIndex)
         notifyChanges()
-    }
+    })
 
-    fun addListener(listener: UserListener) {
+    fun addListener(listener: UsersListener) {
         listeners.add(listener)
-        listener.invoke(users)
+        if (loaded) {
+            listener.invoke(users)
+        }
     }
 
-    fun removeListener(listener: UserListener) = listeners.remove(listener)
+    fun removeListener(listener: UsersListener) {
+        listeners.remove(listener)
+    }
 
-    private fun notifyChanges() = listeners.forEach { it.invoke(users) }
-
-    private fun findIndexById(userId: Long): Int = users.indexOfFirst { it.id == userId }
+    private fun notifyChanges() {
+        if (!loaded) return
+        listeners.forEach { it.invoke(users) }
+    }
 
     companion object {
-
         private val IMAGES = mutableListOf(
             "https://images.unsplash.com/photo-1600267185393-e158a98703de?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&ixid=MnwxfDB8MXxyYW5kb218fHx8fHx8fHwxNjI0MDE0NjQ0&ixlib=rb-1.2.1&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=800",
             "https://images.unsplash.com/photo-1579710039144-85d6bdffddc9?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&ixid=MnwxfDB8MXxyYW5kb218fHx8fHx8fHwxNjI0MDE0Njk1&ixlib=rb-1.2.1&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=800",
@@ -77,6 +89,5 @@ class UserService {
             "https://images.unsplash.com/photo-1567186937675-a5131c8a89ea?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&ixid=MnwxfDB8MXxyYW5kb218fHx8fHx8fHwxNjI0MDE0ODYx&ixlib=rb-1.2.1&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=800",
             "https://images.unsplash.com/photo-1546456073-92b9f0a8d413?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=600&ixid=MnwxfDB8MXxyYW5kb218fHx8fHx8fHwxNjI0MDE0ODY1&ixlib=rb-1.2.1&q=80&utm_campaign=api-credit&utm_medium=referral&utm_source=unsplash_source&w=800"
         )
-
     }
 }

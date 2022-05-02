@@ -1,10 +1,10 @@
 package com.example.recyclerview
 
 import android.app.Application
-import com.example.recyclerview.model.UserService
+import com.example.recyclerview.model.UsersService
 
 class App : Application() {
 
-    val userService = UserService()
+    val usersService = UsersService()
 
 }
